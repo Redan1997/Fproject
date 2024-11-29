@@ -1,125 +1,93 @@
 import mysql.connector
 from mysql.connector import Error
+import time
 
 class ConnectDatabase:
     def __init__(self):
         self._host = "junction.proxy.rlwy.net"
-        self._user = "root"  # Changed to root
+        self._user = "root"
         self._password = "AdGzajmAwcJPccXxoWqeFGAEiQISUGeM"
-        self._database = "optivision"  # Use the railway database
-        self._port = 22274  # Add the specific Railway port
+        self._database = "railway"
+        self._port = 22274
         
         self.con = None
         self.cursor = None
 
-    def connect_db(self):
+    def get_connection(self):
+        """Create a new database connection"""
         try:
-            self.con = mysql.connector.connect(
+            connection = mysql.connector.connect(
                 host=self._host,
                 user=self._user,
                 password=self._password,
                 database=self._database,
                 port=self._port
             )
-            self.cursor = self.con.cursor(dictionary=True)
-            if self.con.is_connected():
-                print("Connection to MySQL database successful!")
-                return True
-            return False
+            return connection
         except Error as e:
             print(f"Error connecting to MySQL database: {e}")
-            return False
-        
+            return None
+
     def register(self, name, email, password):
+        connection = None
         try:
-            # Ensure connection is established
-            if not self.connect_db():
+            connection = self.get_connection()
+            if not connection:
                 return "Database connection failed"
 
-            # Check if user exists before inserting
-            if self.user_exists(email):
+            cursor = connection.cursor(dictionary=True)
+
+            # Check if user exists
+            cursor.execute("SELECT * FROM users WHERE Email = %s", (email,))
+            if cursor.fetchone():
                 return "Email already exists"
 
-            # SQL to insert into users table
-            sql = """
-            INSERT INTO users (Name, Email, Password)
-            VALUES (%s, %s, %s);
-            """
-
-            self.cursor.execute(sql, (name, email, password))
-            self.con.commit()
+            # Insert new user
+            sql = "INSERT INTO users (Name, Email, Password) VALUES (%s, %s, %s)"
+            cursor.execute(sql, (name, email, password))
+            connection.commit()
+            
             print("User registered successfully!")
             return "User registered successfully"
 
-        except Exception as E:
-            self.con.rollback()
-            print(f"Registration error: {E}")
-            return str(E)
+        except Error as e:
+            print(f"Registration error: {e}")
+            if connection:
+                connection.rollback()
+            return str(e)
         finally:
-            # Close the db connection
-            if self.con and self.con.is_connected():
-                self.cursor.close()
-                self.con.close()
-            
+            if connection:
+                if cursor:
+                    cursor.close()
+                connection.close()
+
     def login(self, email, password):
+        connection = None
         try:
-            # Ensure connection is established
-            if not self.connect_db():
+            connection = self.get_connection()
+            if not connection:
                 return "Database connection failed"
 
+            cursor = connection.cursor(dictionary=True)
+
             # Check if user exists
-            if not self.user_exists(email):
+            cursor.execute("SELECT * FROM users WHERE Email = %s", (email,))
+            user = cursor.fetchone()
+
+            if not user:
                 return "Email does not exist"
 
-            # SQL to fetch password
-            sql = """
-            SELECT Password
-            FROM users
-            WHERE Email = %s;
-            """
+            # Verify password
+            if user['Password'] == password:
+                return "True details"
+            else:
+                return "Incorrect password"
 
-            self.cursor.execute(sql, (email,))
-            result = self.cursor.fetchone()
-            
-            if result:
-                extractedPass = result['Password']
-                if password == extractedPass:
-                    return "True details"
-                else:
-                    return "Incorrect password"
-            
-            return "Login failed"
-
-        except Exception as E:
-            print(f"Login error: {E}")
-            return str(E)
+        except Error as e:
+            print(f"Login error: {e}")
+            return str(e)
         finally:
-            # Close the db connection
-            if self.con and self.con.is_connected():
-                self.cursor.close()
-                self.con.close()
-                
-    def user_exists(self, email):
-        try:
-            # Ensure connection is established
-            if not self.connect_db():
-                return False
-
-            sql = """
-            SELECT *
-            FROM users
-            WHERE Email = %s;
-            """
-
-            self.cursor.execute(sql, (email,))
-            result = self.cursor.fetchone()
-            return result is not None
-
-        except Exception as E:
-            print(f"User exists check error: {E}")
-            return False
-        finally:
-            # Close the db connection
-            if self.con and self.con.is_connected():
-                self.cursor.close()
-                self.con.close()
+            if connection:
+                if cursor:
+                    cursor.close()
+                connection.close()
