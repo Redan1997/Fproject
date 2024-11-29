@@ -44,19 +44,19 @@ def register_process():
     
     result = db.register(name, email, password)
     
-    if result is None:
+    if result == "success":
         flash('Successfully Registered!', 'success')
         return redirect(url_for('login'))
     elif result == "Email already exists":
         flash('Email already exists', 'error')
     else:
-        flash('Registration failed', 'error')
+        flash(f'Registration failed: {result}', 'error')
     
     return redirect(url_for('register'))
 
 @app.route('/dashboard')
 def dashboard():
-    return "Welcome to Dashboard!"
+    return "Welcome!"
 
 if __name__ == '__main__':
     app.run(debug=True)
