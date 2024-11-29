@@ -3,10 +3,10 @@ from mysql.connector import Error
 
 class ConnectDatabase:
     def __init__(self):
-        self._host="localhost"
-        self._user="root"
-        self._password="Redanganim1997"
-        self._database="optivision"
+        self._host="junction.proxy.rlwy.net"
+        self._user="admin"
+        self._password="AdGzajmAwcJPccXxoWqeFGAEiQISUGeM"
+        self._database="railway"
         self.con=None
         self.cursor=None
 
