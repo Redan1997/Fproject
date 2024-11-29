@@ -3,9 +3,9 @@ from mysql.connector import Error
 
 class ConnectDatabase:
     def __init__(self):
-        self._host="optivision.czmsyggqabrj.us-east-1.rds.amazonaws.com"
-        self._user="admin"
-        self._password="322836388"
+        self._host="localhost"
+        self._user="root"
+        self._password="Redanganim1997"
         self._database="optivision"
         self.con=None
         self.cursor=None
