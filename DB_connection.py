@@ -30,6 +30,7 @@ class ConnectDatabase:
 
     def register(self, name, email, password):
         connection = None
+        cursor = None
         try:
             connection = self.get_connection()
             if not connection:
@@ -50,15 +51,20 @@ class ConnectDatabase:
             print("User registered successfully!")
             return "User registered successfully"
 
-        except Error as e:
-            print(f"Registration error: {e}")
+        except mysql.connector.Error as e:
+            print(f"Detailed MySQL Error: {e.errno} - {e}")
             if connection:
                 connection.rollback()
-            return str(e)
-        finally:
+            return f"Registration error: {e}"
+        except Exception as e:
+            print(f"Unexpected error: {e}")
             if connection:
-                if cursor:
-                    cursor.close()
+                connection.rollback()
+            return f"Unexpected error: {e}"
+        finally:
+            if cursor:
+                cursor.close()
+            if connection:
                 connection.close()
 
     def login(self, email, password):
